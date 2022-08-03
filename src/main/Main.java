@@ -1,7 +1,6 @@
 package main;
 
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -9,11 +8,12 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 
-import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
 import org.jcodec.codecs.h264.H264Decoder;
-import org.jcodec.common.io.NIOUtils;
+import org.jcodec.common.model.ColorSpace;
+import org.jcodec.common.model.Picture;
+import org.jcodec.scale.AWTUtil;
 
 import com.github.serezhka.jap2lib.rtsp.AudioStreamInfo;
 import com.github.serezhka.jap2lib.rtsp.VideoStreamInfo;
@@ -26,22 +26,13 @@ public class Main {
 		FileChannel videoFileChannel = FileChannel.open(Paths.get("video.h264"), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
 		FileChannel audioFileChannel = FileChannel.open(Paths.get("audio.pcm"), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
 		
-		final JFrame frame0 = new JFrame();
-		frame0.setSize(500, 1080);
-		frame0.setDefaultCloseOperation(3);
-		frame0.setVisible(true);
-		final Renderer cPanel0 = new Renderer();
-		cPanel0.setSize(frame0.getSize());
-		frame0.add(cPanel0);
-		
-		final JFrame frame1 = new JFrame();
-		frame1.setSize(500, 1080);
-		frame1.setLocation(frame0.getX() + frame0.getWidth(), frame0.getY());
-		frame1.setDefaultCloseOperation(3);
-		frame1.setVisible(true);
-		final Renderer cPanel1 = new Renderer();
-		cPanel1.setSize(frame1.getSize());
-		frame1.add(cPanel1);
+		final JFrame frame = new JFrame();
+		frame.setSize(500, 1080);
+		frame.setDefaultCloseOperation(3);
+		frame.setVisible(true);
+		final Renderer cPanel = new Renderer();
+		cPanel.setSize(frame.getSize());
+		frame.add(cPanel);
 		
 		AirplayDataConsumer dumper = new AirplayDataConsumer() {
 			private H264Decoder decoder;
@@ -61,18 +52,13 @@ public class Main {
 					videoFileChannel.write(ByteBuffer.wrap(video));
 					
 					ByteBuffer bb = ByteBuffer.wrap(video);
-//					Picture out = Picture.create(1920, 1088, ColorSpace.YUV420);
-//					var real = decoder.decodeFrame(bb, out.getData());
+					Picture out = Picture.create(1920, 1088, ColorSpace.YUV420);
+					var real = decoder.decodeFrame(bb, out.getData());
 					
-					var img = ImageIO.read(new ByteArrayInputStream(NIOUtils.toArray(bb)));
+					var img = AWTUtil.toBufferedImage(real);
 					
-//					var img0 = AWTUtil.toBufferedImage(real.createCompatible());
-//					var img1 = AWTUtil.toBufferedImage(out.createCompatible());
-					
-//					cPanel0.render(img0);
-					cPanel1.render(img);
-					cPanel0.repaint();
-					cPanel1.repaint();
+					cPanel.render(img);
+					cPanel.repaint();
 				} catch(RuntimeException e) {
 					System.out.print(".");
 				} catch (IOException e) {
